@@ -1,0 +1,95 @@
+name: Release Core
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'canaad-core/v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo install wasm-pack@0.14.0 --locked
+
+      - name: Build WASM
+        run: wasm-pack build --target web --out-dir ../../pkg crates/canaad-wasm
+
+      - name: Create tarball
+        run: |
+          tar -czf canaad-wasm.tar.gz \
+            -C pkg \
+            canaad_wasm.js \
+            canaad_wasm_bg.wasm \
+            canaad_wasm.d.ts \
+            canaad_wasm_bg.wasm.d.ts
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: canaad-wasm
+          path: canaad-wasm.tar.gz
+
+  upload-r2:
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: canaad-wasm
+          path: artifacts/
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          aws s3 sync artifacts/ \
+            s3://${{ vars.R2_BUCKET }}/canaad/${{ github.ref_name }}/ \
+            --endpoint-url https://${{ secrets.CF_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --no-progress
+
+      - name: Update latest in KV
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          npx wrangler@latest kv key put "canaad:latest" "${{ github.ref_name }}" \
+            --namespace-id=${{ secrets.CF_KV_NAMESPACE_ID }} \
+            --remote
+
+  release:
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: canaad-wasm
+          path: artifacts/
+
+      - name: Install parse-changelog
+        uses: taiki-e/install-action@parse-changelog
+
+      - name: Create GitHub Release
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#canaad-core/v}"
+          NOTES=$(parse-changelog crates/canaad-core/CHANGELOG.md "$VERSION")
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes "$NOTES" \
+            artifacts/canaad-wasm.tar.gz

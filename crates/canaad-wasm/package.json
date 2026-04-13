@@ -1,0 +1,15 @@
+{
+  "name": "@gnufoo/canaad",
+  "version": "0.1.0",
+  "description": "AAD canonicalization library (RFC 8785)",
+  "main": "canaad_wasm.js",
+  "types": "canaad_wasm.d.ts",
+  "files": [
+    "canaad_wasm.js",
+    "canaad_wasm.d.ts",
+    "canaad_wasm_bg.wasm",
+    "canaad_wasm_bg.wasm.d.ts"
+  ],
+  "keywords": ["aad", "aead", "canonicalization", "jcs", "rfc8785", "wasm"],
+  "license": "MIT OR Apache-2.0"
+}

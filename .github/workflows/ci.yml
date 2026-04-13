@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - uses: actions/cache@v5
+        id: cache-tools
+        with:
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-tools-just-cargo-audit-cargo-msrv-0.18.4
+
+      - name: Install cargo-binstall
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        uses: cargo-bins/cargo-binstall@v1.17.9
+
+      - name: Install tools
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: cargo binstall --no-confirm just cargo-audit cargo-msrv@0.18.4
+
+      - run: just ci
+
+  miri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo miri test --package canaad-core
