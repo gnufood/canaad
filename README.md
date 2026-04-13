@@ -1,14 +1,19 @@
 # canaad
 
+[![CI](https://github.com/gnufood/canaad/actions/workflows/ci.yml/badge.svg)](https://github.com/gnufood/canaad/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/canaad-core)](https://crates.io/crates/canaad-core)
+[![npm](https://img.shields.io/npm/v/@gnufoo%2Fcanaad)](https://www.npmjs.com/package/@gnufood/canaad)
+[![MSRV](https://img.shields.io/badge/rustc-1.70%2B-orange)](https://blog.rust-lang.org/2023/06/01/Rust-1.70.0.html)
+[![License](https://img.shields.io/crates/l/canaad-core)](LICENSE-MIT)  
 Deterministic AAD for AEAD.
+
+[Reference Spec](https://gnu.foo/specs/aad-spec/) 
 
 ## How it works
 
 You build a context object — tenant, resource, purpose, optional timestamp —
 and canonicalize it to bytes per [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785).
-Those bytes are your AAD. Pass them to your AEAD call at encryption; reconstruct
-the same context and pass the same bytes at decryption. Mismatched context =
-failed decryption, not silent corruption.
+Pass those bytes as AAD to your AEAD call. Same context, same bytes, every time.
 
 ```rust
 // the same context always produces the same bytes
@@ -101,22 +106,6 @@ just test        # native tests only
 just build-wasm  # rebuild pkg/ from crates/canaad-wasm
 just miri        # memory safety (nightly)
 ```
-
-## Spec
-
-[AAD specification](https://gnu.foo/specs/aad-spec/) — field constraints,
-extension patterns, test vectors.
-
-> **Security:** At decryption boundaries, surface a single opaque failure.
-> Don't expose `AadError` variants to callers who don't own the input — that's
-> an oracle.
-
 ## License
 
 MIT OR Apache-2.0
-
-[![CI](https://github.com/gnufood/canaad/actions/workflows/ci.yml/badge.svg)](https://github.com/gnufood/canaad/actions/workflows/ci.yml)
-[![crates.io](https://img.shields.io/crates/v/canaad-core)](https://crates.io/crates/canaad-core)
-[![npm](https://img.shields.io/npm/v/@gnufoo%2Fcanaad)](https://www.npmjs.com/package/@gnufood/canaad)
-[![MSRV](https://img.shields.io/badge/rustc-1.70%2B-orange)](https://blog.rust-lang.org/2023/06/01/Rust-1.70.0.html)
-[![License](https://img.shields.io/crates/l/canaad-core)](LICENSE-MIT)
