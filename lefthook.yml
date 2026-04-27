@@ -1,0 +1,18 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      run: cargo fmt --all --check
+    clippy:
+      run: cargo clippy --workspace
+
+pre-push:
+  commands:
+    test:
+      run: cargo test --workspace
+    audit:
+      run: cargo audit
+    msrv:
+      run: |
+        cargo msrv verify --manifest-path crates/canaad-core/Cargo.toml -- cargo check --locked
+        cargo msrv verify --manifest-path crates/canaad-cli/Cargo.toml -- cargo check --locked
