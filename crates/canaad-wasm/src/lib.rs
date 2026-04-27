@@ -7,8 +7,8 @@
 //! Serialized AAD is capped at 16 KiB. `build()` and `buildString()` return an error if the
 //! canonical output exceeds this limit.
 //!
-//! `validate()` returns a plain bool with no error context. Use `build()` or `buildString()`
-//! when the caller needs to distinguish the failure reason.
+//! `validateDefault()` returns a plain bool with no error context. Use `build()` or
+//! `buildString()` when the caller needs to distinguish the failure reason.
 
 use canaad_core::{AadContext, AadError, ExtensionValue};
 use sha2::{Digest, Sha256};
@@ -68,28 +68,47 @@ fn validate_f64_as_u64(value: f64, field: &str) -> Result<u64, AadError> {
     Ok(value as u64)
 }
 
-/// parses and canonicalizes a JSON string to bytes (RFC 8785).
-#[wasm_bindgen]
-pub fn canonicalize(json: &str) -> Result<Vec<u8>, JsError> {
-    canaad_core::canonicalize(json).map_err(|e| to_js_error(&e))
+/// parses and canonicalizes a JSON string to bytes using the default AAD profile.
+#[wasm_bindgen(js_name = canonicalizeDefault)]
+pub fn canonicalize_default(json: &str) -> Result<Vec<u8>, JsError> {
+    canaad_core::canonicalize_default(json).map_err(|e| to_js_error(&e))
 }
 
-/// parses and canonicalizes a JSON string to a UTF-8 string.
-#[wasm_bindgen(js_name = canonicalizeString)]
-pub fn canonicalize_string(json: &str) -> Result<String, JsError> {
-    canaad_core::canonicalize_string(json).map_err(|e| to_js_error(&e))
+/// parses and canonicalizes a JSON string to a UTF-8 string using the default AAD profile.
+#[wasm_bindgen(js_name = canonicalizeDefaultString)]
+pub fn canonicalize_default_string(json: &str) -> Result<String, JsError> {
+    canaad_core::canonicalize_default_string(json).map_err(|e| to_js_error(&e))
 }
 
-/// validates a JSON string against the AAD specification.
-#[wasm_bindgen]
-pub fn validate(json: &str) -> bool {
-    canaad_core::validate(json).is_ok()
+/// validates a JSON string against the default AAD profile. Returns false on any error.
+#[wasm_bindgen(js_name = validateDefault)]
+pub fn validate_default(json: &str) -> bool {
+    canaad_core::validate_default(json).is_ok()
 }
 
-/// SHA-256 hash of the canonical JSON form.
+/// canonicalizes any valid JSON object to bytes (core rules only, no profile fields required).
+#[wasm_bindgen(js_name = canonicalizeObject)]
+pub fn canonicalize_object(json: &str) -> Result<Vec<u8>, JsError> {
+    canaad_core::canonicalize_object(json).map_err(|e| to_js_error(&e))
+}
+
+/// canonicalizes any valid JSON object to a UTF-8 string (core rules only, no profile fields required).
+#[wasm_bindgen(js_name = canonicalizeObjectString)]
+pub fn canonicalize_object_string(json: &str) -> Result<String, JsError> {
+    canaad_core::canonicalize_object_string(json).map_err(|e| to_js_error(&e))
+}
+
+/// validates a JSON string against core rules only (size, duplicate keys, object shape).
+/// Returns false on any error.
+#[wasm_bindgen(js_name = validateObject)]
+pub fn validate_object(json: &str) -> bool {
+    canaad_core::validate_object(json).is_ok()
+}
+
+/// SHA-256 hash of the canonical JSON form (default AAD profile).
 #[wasm_bindgen]
 pub fn hash(json: &str) -> Result<Vec<u8>, JsError> {
-    let canonical = canaad_core::canonicalize(json).map_err(|e| to_js_error(&e))?;
+    let canonical = canaad_core::canonicalize_default(json).map_err(|e| to_js_error(&e))?;
     let mut hasher = Sha256::new();
     hasher.update(&canonical);
     Ok(hasher.finalize().to_vec())

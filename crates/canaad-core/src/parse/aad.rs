@@ -24,13 +24,16 @@ pub(crate) struct ParsedAad {
     pub(crate) extensions: Extensions,
 }
 
-/// Parses, duplicate-checks, and validates an AAD JSON string against the spec.
+/// Applies core rules only: size check, duplicate-key detection, JSON parse, object assert.
+///
+/// Does not enforce any profile-specific fields (version, required keys, extensions).
+/// Use `parse_aad` for the full default-profile validation.
 ///
 /// # Errors
 ///
-/// Returns an error if the JSON is syntactically invalid, contains duplicate keys,
-/// or violates any AAD specification constraint.
-pub(crate) fn parse_aad(json: &str) -> Result<ParsedAad, AadError> {
+/// Returns an error if the input exceeds `MAX_AAD_SIZE`, contains duplicate keys,
+/// is syntactically invalid JSON, or is not a JSON object.
+pub(crate) fn parse_object(json: &str) -> Result<serde_json::Value, AadError> {
     if json.len() > MAX_AAD_SIZE {
         return Err(AadError::SerializedTooLarge {
             max_bytes: MAX_AAD_SIZE,
@@ -39,6 +42,21 @@ pub(crate) fn parse_aad(json: &str) -> Result<ParsedAad, AadError> {
     }
 
     let value = parse_json_with_duplicate_check(json)?;
+    if !value.is_object() {
+        return Err(AadError::InvalidJson { message: "input must be a JSON object".to_string() });
+    }
+
+    Ok(value)
+}
+
+/// Parses, duplicate-checks, and validates an AAD JSON string against the spec.
+///
+/// # Errors
+///
+/// Returns an error if the JSON is syntactically invalid, contains duplicate keys,
+/// or violates any AAD specification constraint.
+pub(crate) fn parse_aad(json: &str) -> Result<ParsedAad, AadError> {
+    let value = parse_object(json)?;
     let obj = value.as_object().ok_or_else(|| AadError::InvalidJson {
         message: "AAD must be a JSON object".to_string(),
     })?;

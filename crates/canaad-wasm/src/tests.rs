@@ -3,9 +3,9 @@ use canaad_core::AadError;
 use super::*;
 
 #[test]
-fn test_canonicalize() {
+fn test_canonicalize_default() {
     let json = r#"{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}"#;
-    let result = canonicalize(json);
+    let result = canonicalize_default(json);
     assert!(result.is_ok());
 
     let bytes = result.unwrap();
@@ -17,9 +17,9 @@ fn test_canonicalize() {
 }
 
 #[test]
-fn test_canonicalize_string_fn() {
+fn test_canonicalize_default_string_fn() {
     let json = r#"{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}"#;
-    let result = canonicalize_string(json);
+    let result = canonicalize_default_string(json);
     assert!(result.is_ok());
 
     let canonical = result.unwrap();
@@ -30,16 +30,16 @@ fn test_canonicalize_string_fn() {
 }
 
 #[test]
-fn test_validate_valid() {
+fn test_validate_default_valid() {
     let json = r#"{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}"#;
-    assert!(validate(json));
+    assert!(validate_default(json));
 }
 
 #[test]
-fn test_validate_invalid() {
+fn test_validate_default_invalid() {
     // Missing required field
     let json = r#"{"v":1,"tenant":"org_abc"}"#;
-    assert!(!validate(json));
+    assert!(!validate_default(json));
 }
 
 #[test]

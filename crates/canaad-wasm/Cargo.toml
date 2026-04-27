@@ -1,6 +1,6 @@
 [package]
 name = "canaad-wasm"
-version = "0.2.0"
+version = "1.0.0"
 description = "WASM bindings for AAD canonicalization per RFC 8785"
 publish = false  # build artifact — delivered via wasm-pack to pkg/, not crates.io
 readme = "README.md"
@@ -16,7 +16,7 @@ categories.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-canaad-core = { version = "0.4.0", path = "../canaad-core" }
+canaad-core = { version = "1.0.0", path = "../canaad-core" }
 wasm-bindgen = "0.2"
 sha2 = "0.10"
 

@@ -9,14 +9,30 @@
 //! constraint set, and test vectors. Architecture and integration guidance at
 //! [gnu.foo/projects/canaad](https://gnu.foo/projects/canaad).
 //!
+//! ## Architecture
+//!
+//! The library exposes two layers:
+//!
+//! - **Default-profile layer** (`parse_default`, `validate_default`,
+//!   `canonicalize_default`, `canonicalize_default_string`): enforces the standard
+//!   AAD field set — `v`, `tenant`, `resource`, `purpose`, optional `ts` and `x_*`
+//!   extensions.
+//!
+//! - **Generic-object layer** (`validate_object`, `canonicalize_object`,
+//!   `canonicalize_object_string`): applies core rules only (size, duplicate-key
+//!   detection, object assertion, JCS canonicalization) without requiring any
+//!   specific fields. Use this layer to build custom profiles on top of canaad.
+//!
 //! ## Quick Start
 //!
-//! ```rust
-//! use canaad_core::{parse, canonicalize, canonicalize_string, AadContext};
+//! ### Default profile
 //!
-//! // Parse and validate existing JSON
+//! ```rust
+//! use canaad_core::{parse_default, canonicalize_default, canonicalize_default_string, AadContext};
+//!
+//! // Parse and validate existing JSON against the default profile
 //! let json = r#"{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}"#;
-//! let ctx = parse(json)?;
+//! let ctx = parse_default(json)?;
 //! let canonical = ctx.canonicalize_string()?;
 //!
 //! // Or build from scratch
@@ -28,7 +44,18 @@
 //! # Ok::<(), canaad_core::AadError>(())
 //! ```
 //!
-//! ## Validation Rules
+//! ### Generic object (custom profile)
+//!
+//! ```rust
+//! use canaad_core::canonicalize_object;
+//!
+//! // Canonicalize any valid JSON object without profile validation
+//! let json = r#"{"z":"last","a":"first"}"#;
+//! let bytes = canonicalize_object(json)?;
+//! # Ok::<(), canaad_core::AadError>(())
+//! ```
+//!
+//! ## Validation Rules (default profile)
 //!
 //! - Version (`v`): Must be 1
 //! - Tenant: 1-256 bytes, no NUL bytes
@@ -50,7 +77,10 @@ mod types;
 #[cfg(test)]
 mod tests;
 
-pub use api::{canonicalize, canonicalize_string, parse, validate};
+pub use api::{
+    canonicalize_default, canonicalize_default_string, canonicalize_object,
+    canonicalize_object_string, parse_default, validate_default, validate_object,
+};
 pub use context::{AadContext, AadContextBuilder};
 pub use error::{AadError, JsonType};
 pub use parse::{CURRENT_VERSION, MAX_AAD_SIZE};

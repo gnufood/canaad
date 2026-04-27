@@ -11,9 +11,15 @@ Deterministic AAD for AEAD.
 
 ## How it works
 
-You build a context object — tenant, resource, purpose, optional timestamp —
-and canonicalize it to bytes per [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785).
-Pass those bytes as AAD to your AEAD call. Same context, same bytes, every time.
+canaad has two layers:
+
+- **Default-profile layer** — validates the standard field set (`v`, `tenant`, `resource`,
+  `purpose`, optional `ts` and `x_*` extensions), then produces an RFC 8785 canonical
+  byte string. Use `canonicalize_default` / `canonicalizeDefault` in your application code.
+
+- **Generic-object layer** — applies core rules only (size limit, duplicate-key rejection,
+  object assertion, JCS canonicalization) without requiring any specific fields. Use
+  `canonicalize_object` / `canonicalizeObject` when building custom profiles on top of canaad.
 
 ```rust
 // the same context always produces the same bytes
@@ -28,7 +34,7 @@ output for the same input.
 
 | Artifact | Platform | |
 |----------|----------|-|
-| [canaad-core](crates/canaad-core/) | Rust | `canaad-core = "0.4"` in `Cargo.toml` |
+| [canaad-core](crates/canaad-core/) | Rust | `canaad-core = "1.0"` in `Cargo.toml` |
 | [canaad-cli](crates/canaad-cli/) | CLI | see below |
 | [canaad-wasm](crates/canaad-wasm/) | Browser / Worker | `npm install @gnufoo/canaad` |
 
@@ -36,7 +42,7 @@ output for the same input.
 
 ```toml
 [dependencies]
-canaad-core = "0.4"
+canaad-core = "1.0"
 ```
 
 ### CLI
@@ -57,15 +63,18 @@ npm install @gnufoo/canaad
 ### Rust
 
 ```rust
-use canaad_core::{AadContext, canonicalize};
+use canaad_core::{AadContext, canonicalize_default, canonicalize_object};
 
-// From raw JSON
-let aad = canonicalize(r#"{"v":1,"tenant":"acme","resource":"/doc/123","purpose":"encrypt"}"#)?;
+// Default profile: validates v, tenant, resource, purpose
+let aad = canonicalize_default(r#"{"v":1,"tenant":"acme","resource":"/doc/123","purpose":"encrypt"}"#)?;
 
-// Or build it (timestamp is optional)
+// Or build from scratch (timestamp is optional)
 let aad = AadContext::new("acme", "/doc/123", "encrypt")?
     .with_timestamp(1700000000)?
     .canonicalize()?;
+
+// Generic object: core rules only, no required fields
+let aad = canonicalize_object(r#"{"z":"last","a":"first"}"#)?;
 ```
 
 ### CLI
@@ -79,16 +88,23 @@ canaad hash input.json -o hex
 ### JavaScript
 
 ```typescript
-import { initWasm, AadBuilder } from '@gnufoo/canaad';
+import { initWasm, AadBuilder, canonicalizeDefault, canonicalizeObject } from '@gnufoo/canaad';
 
 await initWasm(); // call once at startup
 
+// Default profile
 const aad = new AadBuilder()
     .tenant("acme")
     .resource("/doc/123")
     .purpose("encrypt")
     .timestamp(1700000000) // optional
     .build(); // → Uint8Array — pass directly as AAD to your AEAD call
+
+// Or canonicalize existing JSON with the default profile
+const aad2 = canonicalizeDefault('{"v":1,"tenant":"acme","resource":"/doc/123","purpose":"encrypt"}');
+
+// Generic object: core rules only, no required fields
+const aad3 = canonicalizeObject('{"z":"last","a":"first"}');
 ```
 
 > Numbers only — no BigInt. `build()` throws on NaN, Infinity, negative, or

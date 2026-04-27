@@ -9,7 +9,7 @@ use base64::prelude::*;
 use clap::Parser;
 use sha2::{Digest, Sha256};
 
-use canaad_core::{canonicalize, validate, AadError};
+use canaad_core::{canonicalize_default, validate_default, AadError};
 
 use crate::args::{Cli, Commands, HashOutputFormat, OutputFormat};
 use crate::io::read_input;
@@ -43,7 +43,7 @@ fn cmd_canonicalize(
     to_file: Option<PathBuf>,
 ) -> Result<()> {
     let json = read_input(input, file)?;
-    let canonical = canonicalize(&json).context("failed to canonicalize")?;
+    let canonical = canonicalize_default(&json).context("failed to canonicalize")?;
 
     let output: Vec<u8> = match output_format {
         OutputFormat::Utf8 => {
@@ -77,7 +77,7 @@ fn cmd_canonicalize(
 
 fn cmd_validate(input: Option<String>, file: Option<PathBuf>, quiet: bool) -> Result<()> {
     let json = read_input(input, file)?;
-    validate(&json).context("validation failed")?;
+    validate_default(&json).context("validation failed")?;
 
     if !quiet {
         println!("valid");
@@ -92,7 +92,7 @@ fn cmd_hash(
     output_format: HashOutputFormat,
 ) -> Result<()> {
     let json = read_input(input, file)?;
-    let canonical = canonicalize(&json).context("failed to canonicalize")?;
+    let canonical = canonicalize_default(&json).context("failed to canonicalize")?;
 
     let hash = Sha256::digest(&canonical);
 

@@ -14,18 +14,35 @@ pub use string_types::{Purpose, Resource, Tenant};
 mod tests {
     use super::*;
     use crate::error::AadError;
+    use rstest::rstest;
 
-    #[test]
-    fn test_safe_int_valid() {
-        assert!(SafeInt::new(0).is_ok());
-        assert!(SafeInt::new(1).is_ok());
-        assert!(SafeInt::new(MAX_SAFE_INTEGER).is_ok());
+    // -------------------------------------------------------------------------
+    // SafeInt — valid boundary values (parameterized)
+    // -------------------------------------------------------------------------
+
+    #[rstest]
+    #[case(0_u64, "zero")]
+    #[case(1_u64, "one")]
+    #[case(9_007_199_254_740_991_u64, "MAX_SAFE_INTEGER")]
+    fn test_safe_int_valid(#[case] value: u64, #[case] label: &str) {
+        let result = SafeInt::new(value);
+        assert!(result.is_ok(), "SafeInt::new({value}) [{label}] must succeed");
+        assert_eq!(result.unwrap().value(), value);
     }
 
-    #[test]
-    fn test_safe_int_overflow() {
-        let result = SafeInt::new(MAX_SAFE_INTEGER + 1);
-        assert!(matches!(result, Err(AadError::IntegerOutOfRange { .. })));
+    // -------------------------------------------------------------------------
+    // SafeInt — overflow (parameterized)
+    // -------------------------------------------------------------------------
+
+    #[rstest]
+    #[case(9_007_199_254_740_992_u64, "MAX_SAFE_INTEGER + 1")]
+    #[case(u64::MAX, "u64::MAX")]
+    fn test_safe_int_overflow(#[case] value: u64, #[case] label: &str) {
+        let result = SafeInt::new(value);
+        assert!(
+            matches!(result, Err(AadError::IntegerOutOfRange { .. })),
+            "SafeInt::new({value}) [{label}] must return IntegerOutOfRange; got {result:?}"
+        );
     }
 
     #[test]
@@ -33,6 +50,36 @@ mod tests {
         let result = SafeInt::try_from(-1i64);
         assert!(matches!(result, Err(AadError::NegativeInteger { .. })));
     }
+
+    // -------------------------------------------------------------------------
+    // SafeInt — try_from<u64> boundary values (parameterized)
+    // -------------------------------------------------------------------------
+
+    #[rstest]
+    #[case(0_u64, true, "zero valid")]
+    #[case(9_007_199_254_740_991_u64, true, "MAX_SAFE_INTEGER valid")]
+    #[case(9_007_199_254_740_992_u64, false, "MAX_SAFE_INTEGER+1 rejected")]
+    #[case(u64::MAX, false, "u64::MAX rejected")]
+    fn test_safe_int_try_from_u64(
+        #[case] value: u64,
+        #[case] should_succeed: bool,
+        #[case] label: &str,
+    ) {
+        let result = SafeInt::try_from(value);
+        if should_succeed {
+            assert!(result.is_ok(), "{label}: try_from({value}) must succeed; got {result:?}");
+            assert_eq!(result.unwrap().value(), value, "{label}: value round-trips");
+        } else {
+            assert!(
+                matches!(result, Err(AadError::IntegerOutOfRange { .. })),
+                "{label}: try_from({value}) must return IntegerOutOfRange; got {result:?}"
+            );
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // String type constructors
+    // -------------------------------------------------------------------------
 
     #[test]
     fn test_tenant_valid() {
@@ -83,6 +130,10 @@ mod tests {
         assert!(matches!(result, Err(AadError::FieldTooShort { field: "purpose", .. })));
     }
 
+    // -------------------------------------------------------------------------
+    // FieldKey validation
+    // -------------------------------------------------------------------------
+
     #[test]
     fn test_field_key_valid() {
         assert!(FieldKey::new("v").is_ok());
@@ -97,54 +148,44 @@ mod tests {
         assert!(matches!(result, Err(AadError::EmptyFieldKey)));
     }
 
-    #[test]
-    fn test_field_key_invalid_chars() {
-        assert!(matches!(FieldKey::new("UPPER"), Err(AadError::InvalidFieldKey { .. })));
-        assert!(matches!(FieldKey::new("with-dash"), Err(AadError::InvalidFieldKey { .. })));
-        assert!(matches!(FieldKey::new("with123"), Err(AadError::InvalidFieldKey { .. })));
+    #[rstest]
+    #[case("UPPER", "uppercase letters")]
+    #[case("with-dash", "hyphen")]
+    #[case("with123", "digits")]
+    fn test_field_key_invalid_chars(#[case] key: &str, #[case] _reason: &str) {
+        assert!(
+            matches!(FieldKey::new(key), Err(AadError::InvalidFieldKey { .. })),
+            "'{key}' ({_reason}) must return InvalidFieldKey"
+        );
     }
 
-    #[test]
-    fn test_extension_key_valid() {
-        let key = FieldKey::new("x_vault_cluster").unwrap();
-        assert!(key.validate_as_extension().is_ok());
+    // -------------------------------------------------------------------------
+    // Extension key validation (parameterized)
+    // -------------------------------------------------------------------------
 
-        let key = FieldKey::new("x_myapp_region").unwrap();
-        assert!(key.validate_as_extension().is_ok());
-
-        let key = FieldKey::new("x_app_field_name").unwrap();
-        assert!(key.validate_as_extension().is_ok());
+    #[rstest]
+    #[case("x_vault_cluster", "two-segment with underscores")]
+    #[case("x_myapp_region", "two-segment region")]
+    #[case("x_app_field_name", "multi-segment field")]
+    fn test_extension_key_valid(#[case] raw_key: &str, #[case] _label: &str) {
+        let key = FieldKey::new(raw_key).expect("key must be a valid FieldKey");
+        assert!(
+            key.validate_as_extension().is_ok(),
+            "'{raw_key}' ({_label}) must be a valid extension key"
+        );
     }
 
-    #[test]
-    fn test_extension_key_invalid() {
-        // missing second underscore
-        let key = FieldKey::new("x_vault").unwrap();
-        assert!(matches!(
-            key.validate_as_extension(),
-            Err(AadError::InvalidExtensionKeyFormat { .. })
-        ));
-
-        // empty app part
-        let key = FieldKey::new("x__field").unwrap();
-        assert!(matches!(
-            key.validate_as_extension(),
-            Err(AadError::InvalidExtensionKeyFormat { .. })
-        ));
-
-        // empty field part
-        let key = FieldKey::new("x_app_").unwrap();
-        assert!(matches!(
-            key.validate_as_extension(),
-            Err(AadError::InvalidExtensionKeyFormat { .. })
-        ));
-
-        // doesn't start with x_
-        let key = FieldKey::new("y_app_field").unwrap();
-        assert!(matches!(
-            key.validate_as_extension(),
-            Err(AadError::InvalidExtensionKeyFormat { .. })
-        ));
+    #[rstest]
+    #[case("x_vault", "missing second underscore")]
+    #[case("x__field", "empty app part")]
+    #[case("x_app_", "empty field part")]
+    #[case("y_app_field", "does not start with x_")]
+    fn test_extension_key_invalid(#[case] raw_key: &str, #[case] _reason: &str) {
+        let key = FieldKey::new(raw_key).expect("key must be a valid FieldKey");
+        assert!(
+            matches!(key.validate_as_extension(), Err(AadError::InvalidExtensionKeyFormat { .. })),
+            "'{raw_key}' ({_reason}) must return InvalidExtensionKeyFormat"
+        );
     }
 
     #[test]
@@ -157,6 +198,10 @@ mod tests {
         let fk = FieldKey::new("x_app_field").unwrap();
         assert!(!fk.is_reserved());
     }
+
+    // -------------------------------------------------------------------------
+    // ExtensionValue
+    // -------------------------------------------------------------------------
 
     #[test]
     fn test_extension_value_string() {

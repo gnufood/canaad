@@ -1,6 +1,6 @@
 [package]
 name = "canaad-cli"
-version = "0.3.2"
+version = "1.0.0"
 description = "CLI tool for AAD canonicalization per RFC 8785"
 documentation = "https://docs.rs/canaad-cli"
 homepage = "https://gnu.foo/projects/canaad"
@@ -18,7 +18,7 @@ name = "canaad"
 path = "src/main.rs"
 
 [dependencies]
-canaad-core = { version = "0.4.0", path = "../canaad-core" }
+canaad-core = { version = "1.0.0", path = "../canaad-core" }
 clap = { version = ">=4, <4.5", features = ["derive"] }
 sha2 = "0.10"
 hex = "0.4"

@@ -8,6 +8,7 @@ mod aad;
 mod scan;
 
 pub(crate) use aad::parse_aad;
+pub(crate) use aad::parse_object;
 pub(crate) use aad::ParsedAad;
 pub use aad::{CURRENT_VERSION, MAX_AAD_SIZE};
 

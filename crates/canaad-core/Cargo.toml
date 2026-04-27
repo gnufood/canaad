@@ -1,6 +1,6 @@
 [package]
 name = "canaad-core"
-version = "0.4.0"
+version = "1.0.0"
 description = "Core library for AAD canonicalization per RFC 8785"
 documentation = "https://docs.rs/canaad-core"
 homepage = "https://gnu.foo/projects/canaad"
@@ -23,6 +23,7 @@ serde_json_canonicalizer = "0.2"
 sha2 = "0.10"
 hex = "0.4"
 proptest = "1.4"
+rstest = "0.25"
 # preserve_order enables IndexMap-backed serde_json::Map so key emission
 # order is observable in tests that assert canonical key ordering.
 serde_json = { version = "1.0", features = ["preserve_order"] }

@@ -1,6 +1,6 @@
 //! Section 10 known-answer vectors from the AAD specification.
 
-use crate::{canonicalize_string, AadContext};
+use crate::{canonicalize_default_string, AadContext};
 use sha2::{Digest, Sha256};
 
 fn sha256_hex(data: &[u8]) -> String {
@@ -29,7 +29,7 @@ fn test_vector_10_1_minimal_fields() {
 
     let expected_hex = "7b22707572706f7365223a22656e6372797074696f6e222c227265736f75726365223a22736563726574732f6462222c2274656e616e74223a226f72675f616263222c2276223a317d";
 
-    let canonical = canonicalize_string(input).expect("should parse and canonicalize");
+    let canonical = canonicalize_default_string(input).expect("should parse and canonicalize");
     assert_eq!(canonical, expected_canonical);
 
     let utf8_hex = hex::encode(canonical.as_bytes());
@@ -66,7 +66,7 @@ fn test_vector_10_2_all_fields() {
 
     let expected_canonical = r#"{"purpose":"encryption-at-rest","resource":"secrets/db/prod","tenant":"org_abc","ts":1706400000,"v":1}"#;
 
-    let canonical = canonicalize_string(input).expect("should parse and canonicalize");
+    let canonical = canonicalize_default_string(input).expect("should parse and canonicalize");
     assert_eq!(canonical, expected_canonical);
 }
 
@@ -99,7 +99,7 @@ fn test_vector_10_3_unicode() {
     let expected_canonical =
         r#"{"purpose":"encryption","resource":"data/🔐/secret","tenant":"组织_测试","v":1}"#;
 
-    let canonical = canonicalize_string(input).expect("should parse and canonicalize");
+    let canonical = canonicalize_default_string(input).expect("should parse and canonicalize");
     assert_eq!(canonical, expected_canonical);
 
     assert!(canonical.contains("组织_测试"));
@@ -133,7 +133,7 @@ fn test_vector_10_4_extension_fields() {
 
     let expected_canonical = r#"{"purpose":"key-wrapping","resource":"vault/key","tenant":"org_abc","v":1,"x_vault_cluster":"us-east-1"}"#;
 
-    let canonical = canonicalize_string(input).expect("should parse and canonicalize");
+    let canonical = canonicalize_default_string(input).expect("should parse and canonicalize");
     assert_eq!(canonical, expected_canonical);
 }
 
@@ -168,7 +168,7 @@ fn test_vector_10_5_jcs_edge_cases() {
     // Canonical output should use \n not \u000A, and preserve escaped quotes
     let expected_canonical = r#"{"purpose":"test","resource":"path/with\"quotes","tenant":"org\ntest","ts":9007199254740991,"v":1}"#;
 
-    let canonical = canonicalize_string(input).expect("should parse and canonicalize");
+    let canonical = canonicalize_default_string(input).expect("should parse and canonicalize");
     assert_eq!(canonical, expected_canonical);
 
     assert!(canonical.contains(r#"\n"#));
