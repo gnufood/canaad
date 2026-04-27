@@ -1,16 +1,3 @@
-/**
- * TypeScript test suite for canaad-wasm WASM bindings.
- *
- * Exercises the JS/WASM interface after the Pass 1 rename:
- *   canonicalize → canonicalizeDefault
- *   canonicalizeString → canonicalizeDefaultString
- *   validate → validateDefault
- * plus the new generic object bindings.
- *
- * Uses initSync so the WASM module is loaded synchronously before tests run,
- * which is required in a Node.js environment with the --target web build.
- */
-
 import { readFileSync } from "node:fs";
 import { describe, it, expect, beforeAll } from "vitest";
 import {
@@ -37,7 +24,7 @@ const WASM_PATH: string = process.env["CANAAD_WASM_PATH"] as string;
 
 beforeAll(() => {
   const wasmBytes = readFileSync(WASM_PATH);
-  initSync({ module: wasmBytes });
+  initSync({ module: wasmBytes }); // --target web requires sync init in Node.js
 });
 
 // ---------------------------------------------------------------------------
@@ -50,7 +37,6 @@ function toHex(bytes: Uint8Array): string {
     .join("");
 }
 
-// Canonical AAD for the shared fixture (all tests that need a valid default AAD use this)
 const VALID_DEFAULT_JSON =
   '{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}';
 const CANONICAL_DEFAULT =

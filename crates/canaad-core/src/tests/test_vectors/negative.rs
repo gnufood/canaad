@@ -114,9 +114,6 @@ fn test_duplicate_key_exact_key_extracted() {
 // Duplicate key — exact key extracted for each position (parameterized)
 // =============================================================================
 
-/// Duplicate where the repeated key is the first field in the object.
-/// Duplicate where the repeated key is a middle field.
-/// Duplicate where the repeated key is the last field.
 #[rstest]
 #[case(r#"{"v":1,"v":2,"tenant":"org","resource":"res","purpose":"test"}"#, "v", "first field")]
 #[case(
@@ -150,27 +147,22 @@ fn test_negative_duplicate_key_position(
 // =============================================================================
 
 #[rstest]
-// x_foo is missing the second underscore
 #[case(
     r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_foo":"value"}"#,
     "x_foo missing second segment"
 )]
-// x__field has empty app part
 #[case(
     r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x__field":"value"}"#,
     "x__field empty app segment"
 )]
-// x_app_ has empty field part
 #[case(
     r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_app_":"value"}"#,
     "x_app_ empty field part"
 )]
-// x_foo bare prefix with only one underscore segment
 #[case(
     r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_foo":"bad"}"#,
     "x_foo no second segment (duplicate label variant)"
 )]
-// x__bar empty app segment (double underscore)
 #[case(
     r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x__bar":"bad"}"#,
     "x__bar empty app segment (duplicate label variant)"

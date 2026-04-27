@@ -61,7 +61,6 @@ fn test_generic_unicode_values() {
     let result = canonicalize_object_string(input);
     assert!(result.is_ok(), "unicode values must be accepted: {result:?}");
     let canonical = result.unwrap();
-    // All values should be present verbatim.
     assert!(canonical.contains("🔐"));
     assert!(canonical.contains("组织"));
     assert!(canonical.contains("مرحبا"));
@@ -78,7 +77,6 @@ fn test_generic_twenty_plus_fields_sorted() {
 
     let canonical = canonicalize_object_string(&input).unwrap();
 
-    // Extract key order from canonical output.
     let value: serde_json::Value = serde_json::from_str(&canonical).unwrap();
     let keys: Vec<&str> = value.as_object().unwrap().keys().map(String::as_str).collect();
     let mut sorted = keys.clone();

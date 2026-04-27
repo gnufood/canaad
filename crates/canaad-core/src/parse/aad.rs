@@ -95,11 +95,21 @@ fn validate_field_names(obj: &Map<String, Value>) -> Result<(), AadError> {
         if RESERVED_KEYS.contains(&key.as_str()) {
             continue;
         }
-        let field_key = FieldKey::new(key.clone())?;
+        // Inline char-check so invalid-char keys (e.g. "FOO") return InvalidFieldKey
+        // rather than UnknownField — preserving error semantics while avoiding a
+        // FieldKey allocation for the UnknownField path.
+        for ch in key.chars() {
+            if !matches!(ch, 'a'..='z' | '_') {
+                return Err(AadError::InvalidFieldKey {
+                    key: key.clone(),
+                    reason: format!("contains invalid character '{ch}', only [a-z_] allowed"),
+                });
+            }
+        }
         if !key.starts_with("x_") {
             return Err(AadError::UnknownField { field: key.clone(), version: CURRENT_VERSION });
         }
-        field_key.validate_as_extension()?;
+        FieldKey::new(key.as_str())?.validate_as_extension()?;
     }
     Ok(())
 }
@@ -137,8 +147,8 @@ fn extract_extensions(obj: &Map<String, Value>) -> Result<Extensions, AadError> 
     let mut extensions = Extensions::new();
     for (key, value) in obj {
         if key.starts_with("x_") {
-            let field_key = FieldKey::new(key)?;
-            field_key.validate_as_extension()?;
+            // validate_field_names already verified key format
+            let field_key = FieldKey::new(key.as_str())?;
             let ext_value = parse_extension_value(value)?;
             extensions.insert(field_key, ext_value);
         }

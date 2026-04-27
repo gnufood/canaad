@@ -178,7 +178,6 @@ fn test_vector_10_5_jcs_edge_cases() {
 
 #[test]
 fn test_vector_10_5_max_safe_integer() {
-    // Test the maximum safe integer value
     let ctx = AadContext::new("org", "res", "test")
         .expect("should create context")
         .with_timestamp(9007199254740991)
