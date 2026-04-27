@@ -157,12 +157,28 @@ jobs:
     if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' && (needs.build-global-artifacts.result == 'skipped' || needs.build-global-artifacts.result == 'success') && (needs.build-local-artifacts.result == 'skipped' || needs.build-local-artifacts.result == 'success') }}
     runs-on: "ubuntu-22.04"
     steps:
+      - uses: actions/checkout@v6
+
       - name: Fetch artifacts
         uses: actions/download-artifact@v8
         with:
           pattern: artifacts-*
           path: artifacts/
           merge-multiple: true
+
+      - name: Install parse-changelog
+        uses: taiki-e/install-action@parse-changelog
+
+      - name: Install remark
+        run: npm install --no-save remark
+
+      - name: Extract release notes
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#canaad-cli/v}"
+          parse-changelog crates/canaad-cli/CHANGELOG.md "$VERSION" \
+            | node scripts/md-to-json.mjs "$VERSION" \
+            > artifacts/release-notes.json
 
       - name: Rename installer script
         run: mv artifacts/canaad-cli-installer.sh artifacts/install.sh
