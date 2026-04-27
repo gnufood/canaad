@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `rstest` parameterized edge-case tests: field-length boundaries, NUL rejection, timestamp and integer range limits, extension key format, version constraints.
 - `AadError::InvalidFloat` — new variant for WASM f64 boundary validation (NaN, Infinity, negative, fractional, above `MAX_SAFE_INTEGER`).
 
+### Performance
+
+- `validate_field_names`: inlined character validation before `FieldKey::new`, avoiding a heap allocation for non-extension unknown keys (e.g. keys with invalid characters). Error ordering preserved: `InvalidFieldKey` still fires before `UnknownField`.
+- `extract_extensions`: removed redundant `validate_as_extension()` call — `validate_field_names` already verifies extension key format for every `x_*` key on the same parse path.
+
 ## [0.4.0] - 2026-04-13
 
 ### Fixed

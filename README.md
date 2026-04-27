@@ -88,9 +88,9 @@ canaad hash input.json -o hex
 ### JavaScript
 
 ```typescript
-import { initWasm, AadBuilder, canonicalizeDefault, canonicalizeObject } from '@gnufoo/canaad';
+import init, { AadBuilder, canonicalizeDefault, canonicalizeObject } from '@gnufoo/canaad';
 
-await initWasm(); // call once at startup
+await init(); // call once at startup
 
 // Default profile
 const aad = new AadBuilder()
@@ -118,6 +118,7 @@ Rust nightly + miri component (miri only).
 
 ```bash
 just ci          # full check suite (mirrors CI): lint, test, audit, msrv
+just ci-local    # run CI workflow locally via act (requires Docker)
 just test        # native tests only
 just build-wasm  # rebuild pkg/ from crates/canaad-wasm
 just miri        # memory safety (nightly)
