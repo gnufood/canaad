@@ -43,6 +43,9 @@ const ok = validateDefault('{"v":1,"tenant":"org_abc","resource":"secrets/db","p
 Canonicalize any valid JSON object — no required fields, no version check:
 
 ```typescript
+const bytes = canonicalizeObject('{"z":"last","a":"first"}');
+// → Uint8Array
+
 const str = canonicalizeObjectString('{"z":"last","a":"first"}');
 // → '{"a":"first","z":"last"}'
 
@@ -73,10 +76,24 @@ const aad = new AadBuilder()
     .timestamp(1706400000)
     .extensionString("x_vault_cluster", "us-east-1")
     .extensionInt("x_app_priority", 5)
-    .build();  // → Uint8Array
+    .build();        // → Uint8Array
+
+const str = new AadBuilder()
+    .tenant("org_abc")
+    .resource("secrets/db")
+    .purpose("encryption")
+    .buildString();  // → string
 ```
 
 Numbers only — no BigInt. `build()` and `buildString()` reject NaN, Infinity, negative, fractional, and values above `Number.MAX_SAFE_INTEGER`.
+
+## Constants
+
+```typescript
+SPEC_VERSION()        // → 1  (current AAD spec version)
+MAX_SAFE_INTEGER()    // → 9007199254740991  (2^53 - 1, max allowed integer value)
+MAX_SERIALIZED_BYTES() // → 16384  (16 KiB size limit)
+```
 
 ## Errors
 
