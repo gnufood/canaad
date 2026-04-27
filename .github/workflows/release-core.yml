@@ -21,7 +21,14 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - uses: actions/cache@v5
+        id: cache-wasm-pack
+        with:
+          path: ~/.cargo/bin/wasm-pack
+          key: ${{ runner.os }}-wasm-pack-0.14.0
+
       - run: cargo install wasm-pack@0.14.0 --locked
+        if: steps.cache-wasm-pack.outputs.cache-hit != 'true'
 
       - name: Build WASM
         run: wasm-pack build --target web --out-dir ../../pkg crates/canaad-wasm
@@ -103,7 +110,14 @@ jobs:
 
       - run: npm install -g npm@latest
 
+      - uses: actions/cache@v5
+        id: cache-wasm-pack
+        with:
+          path: ~/.cargo/bin/wasm-pack
+          key: ${{ runner.os }}-wasm-pack-0.14.0
+
       - run: cargo install wasm-pack@0.14.0 --locked
+        if: steps.cache-wasm-pack.outputs.cache-hit != 'true'
 
       - name: Build and patch WASM package
         run: |
