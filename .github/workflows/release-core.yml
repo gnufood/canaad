@@ -84,6 +84,36 @@ jobs:
             --namespace-id=${{ secrets.CF_KV_NAMESPACE_ID }} \
             --remote
 
+  npm-publish:
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: cargo install wasm-pack@0.14.0 --locked
+
+      - name: Build and patch WASM package
+        run: |
+          wasm-pack build --target web --out-dir ../../pkg crates/canaad-wasm
+          node scripts/patch-pkg.mjs
+
+      - name: Publish to npm
+        run: npm publish --access public
+        working-directory: pkg
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   release:
     needs: build-wasm
     runs-on: ubuntu-latest
