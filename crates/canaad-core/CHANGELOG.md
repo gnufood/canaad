@@ -5,6 +5,22 @@ All notable changes to canaad-core will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-04-27
+
+### Changed
+
+- **Breaking:** `parse` renamed to `parse_default`; `validate` renamed to `validate_default`; `canonicalize` renamed to `canonicalize_default`; `canonicalize_string` renamed to `canonicalize_default_string`. All four are default-profile operations — the rename makes the layer explicit.
+
+### Added
+
+- Generic object layer: `canonicalize_object`, `canonicalize_object_string`, `validate_object` — apply core rules (size limit, duplicate-key detection, object assertion, JCS) without requiring any specific fields. Use these to build custom profiles on top of `canaad-core`.
+- `profile::default` module — explicit boundary separating the default-profile layer from the generic layer.
+- `parse_object` (crate-internal) — core JSON rules extracted from `parse_aad`; both layers delegate to it.
+- Fuzzing infrastructure: `cargo-fuzz` targets for `fuzz_canonicalize_object`, `fuzz_canonicalize_default`, `fuzz_parse_default` with seed corpus committed.
+- `proptest` property-based tests: determinism, key-ordering, and round-trip invariants for both layers.
+- `rstest` parameterized edge-case tests: field-length boundaries, NUL rejection, timestamp and integer range limits, extension key format, version constraints.
+- `AadError::InvalidFloat` — new variant for WASM f64 boundary validation (NaN, Infinity, negative, fractional, above `MAX_SAFE_INTEGER`).
+
 ## [0.4.0] - 2026-04-13
 
 ### Fixed

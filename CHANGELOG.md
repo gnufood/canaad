@@ -5,6 +5,19 @@ All notable changes to the `@gnufoo/canaad` npm package will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-04-27
+
+### Changed
+
+- **Breaking:** `canonicalize` renamed to `canonicalizeDefault`; `canonicalizeString` renamed to `canonicalizeDefaultString`; `validate` renamed to `validateDefault`. The rename makes the profile layer explicit.
+
+### Added
+
+- `canonicalizeObject`, `canonicalizeObjectString`, `validateObject` — generic object layer; applies core rules only (size, duplicate keys, object shape, JCS) without requiring `v`, `tenant`, `resource`, or `purpose` fields.
+- TypeScript test suite (vitest) covering all bindings, `AadBuilder` f64 edge cases, and the spec §10.1 known-answer vector.
+
+---
+
 ## [0.5.1] - 2026-02-20
 
 ### Added

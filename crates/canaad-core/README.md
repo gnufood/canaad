@@ -7,13 +7,15 @@ Parse, validate, and canonicalize AAD contexts per [RFC 8785](https://www.rfc-ed
 
 ## Use it
 
+### Default profile
+
 Parse existing JSON:
 
 ```rust
-use canaad_core::parse;
+use canaad_core::parse_default;
 
 let json = r#"{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}"#;
-let ctx = parse(json)?;
+let ctx = parse_default(json)?;
 let canonical = ctx.canonicalize_string()?;
 ```
 
@@ -43,6 +45,19 @@ let ctx = AadContext::builder()
 ```
 
 Builder defers all validation to `build()` — invalid extensions surface as errors, not silent drops.
+
+### Generic object layer
+
+Canonicalize any valid JSON object without profile validation — no required fields, no version check:
+
+```rust
+use canaad_core::canonicalize_object;
+
+let bytes = canonicalize_object(r#"{"z":"last","a":"first"}"#)?;
+// → {"a":"first","z":"last"} (keys sorted per JCS)
+```
+
+Use this layer to build custom profiles on top of `canaad-core`.
 
 ## What it checks
 

@@ -1,15 +1,8 @@
 # canaad-wasm
 
 [![npm](https://img.shields.io/npm/v/@gnufoo%2Fcanaad)](https://www.npmjs.com/package/@gnufoo/canaad)
-[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](../../LICENSE-MIT)
 
 AAD canonicalization for the browser and Cloudflare Workers. Same spec, same bytes as canaad-core.
-
-```bash
-npm install @gnufoo/canaad
-```
-
-Fully typed — ships with `.d.ts` declarations.
 
 ## Initialize
 
@@ -85,7 +78,3 @@ wasm-pack build --target web --out-dir pkg crates/canaad-wasm
 ```
 
 `--target web` exports an explicit `init()` you control — works with Cloudflare Workers and Vite.
-
-## License
-
-MIT OR Apache-2.0

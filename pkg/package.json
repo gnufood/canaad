@@ -5,7 +5,7 @@
     "Ethan Henderson <git@gnu.foo>"
   ],
   "description": "WASM bindings for AAD canonicalization per RFC 8785",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",

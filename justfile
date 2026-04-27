@@ -32,6 +32,10 @@ test-wasm:
 build-wasm:
     wasm-pack build --target web --out-dir ../../pkg crates/canaad-wasm
 
+# TypeScript tests for the WASM bindings (requires pkg/ to be built first)
+test-wasm-ts:
+    npm --prefix crates/canaad-wasm run test
+
 # Memory safety (requires nightly + miri component)
 miri:
     cargo miri test --package canaad-core

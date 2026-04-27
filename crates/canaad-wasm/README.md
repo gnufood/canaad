@@ -6,36 +6,55 @@ AAD canonicalization for the browser and Cloudflare Workers. Same spec, same byt
 
 ## Initialize
 
-WASM must be initialized once before any function calls:
+WASM must be initialized once before any function calls.
+
+Browser / Cloudflare Workers:
 
 ```typescript
-import { initWasm, canonicalize } from '@gnufoo/canaad';
+import init, { canonicalizeDefault } from '@gnufoo/canaad';
 
-await initWasm();
+await init();
 ```
 
-In a Worker or module context, call this at startup. Subsequent calls are no-ops.
-
-## Canonicalize
+Node.js:
 
 ```typescript
-const bytes = canonicalize('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
+import { readFileSync } from 'node:fs';
+import { initSync, canonicalizeDefault } from '@gnufoo/canaad';
+
+initSync({ module: readFileSync(new URL('./canaad_wasm_bg.wasm', import.meta.url)) });
+```
+
+## Default profile
+
+```typescript
+const bytes = canonicalizeDefault('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
 // → Uint8Array
 
-const str = canonicalizeString('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
+const str = canonicalizeDefaultString('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
 // → string
-```
 
-## Validate
-
-```typescript
-const ok = validate('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
+const ok = validateDefault('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
 // → boolean
 ```
 
+## Generic object layer
+
+Canonicalize any valid JSON object — no required fields, no version check:
+
+```typescript
+const str = canonicalizeObjectString('{"z":"last","a":"first"}');
+// → '{"a":"first","z":"last"}'
+
+const ok = validateObject('{"anything":"goes"}');
+// → true
+```
+
+Use this layer to build custom profiles.
+
 ## Hash
 
-SHA-256 of the canonical form:
+SHA-256 of the canonical form (default profile):
 
 ```typescript
 const sha = hash('{"v":1,"tenant":"org_abc","resource":"secrets/db","purpose":"encryption"}');
@@ -65,7 +84,7 @@ Failed calls throw with a descriptive message:
 
 ```typescript
 try {
-    canonicalize('{"v":1}');
+    canonicalizeDefault('{"v":1}');
 } catch (e) {
     console.error(e.message);  // "missing required field: tenant"
 }
@@ -74,7 +93,7 @@ try {
 ## Build from source
 
 ```bash
-wasm-pack build --target web --out-dir pkg crates/canaad-wasm
+wasm-pack build --target web --out-dir ../../pkg crates/canaad-wasm
 ```
 
 `--target web` exports an explicit `init()` you control — works with Cloudflare Workers and Vite.
