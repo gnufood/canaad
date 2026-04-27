@@ -1,9 +1,9 @@
 //! Free-standing public API: default-profile and generic-object functions.
 
 use crate::canon::canonicalize_value;
-use crate::context::AadContext;
 use crate::error::AadError;
-use crate::parse::{parse_aad, parse_object};
+use crate::parse::parse_object;
+use crate::profile::default::{parse_aad, AadContext};
 
 // ---------------------------------------------------------------------------
 // Default-profile API (requires v, tenant, resource, purpose)

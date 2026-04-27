@@ -72,6 +72,7 @@ mod canon;
 mod context;
 mod error;
 mod parse;
+mod profile;
 mod types;
 
 #[cfg(test)]

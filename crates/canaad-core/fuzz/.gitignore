@@ -1,0 +1,7 @@
+# libFuzzer artifacts — not committed
+artifacts/
+coverage/
+target/
+
+# corpus is committed — do not ignore
+!corpus/

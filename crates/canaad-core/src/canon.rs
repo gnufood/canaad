@@ -1,8 +1,8 @@
 //! JCS (JSON Canonicalization Scheme) serialization per RFC 8785.
 
-use crate::context::AadContext;
 use crate::error::AadError;
 use crate::parse::MAX_AAD_SIZE;
+use crate::profile::default::AadContext;
 use serde::Serialize;
 use serde_json::Value;
 

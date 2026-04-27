@@ -1,0 +1,30 @@
+[package]
+name = "canaad-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+canaad-core = { path = ".." }
+
+[[bin]]
+name = "fuzz_canonicalize_object"
+path = "fuzz_targets/fuzz_canonicalize_object.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_canonicalize_default"
+path = "fuzz_targets/fuzz_canonicalize_default.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_parse_default"
+path = "fuzz_targets/fuzz_parse_default.rs"
+test = false
+doc = false
