@@ -31,6 +31,7 @@ test-wasm:
 # Rebuild WASM package into pkg/
 build-wasm:
     wasm-pack build --target web --out-dir ../../pkg crates/canaad-wasm
+    node scripts/patch-pkg.mjs
 
 # TypeScript tests for the WASM bindings (requires pkg/ to be built first)
 test-wasm-ts:
@@ -39,3 +40,7 @@ test-wasm-ts:
 # Memory safety (requires nightly + miri component)
 miri:
     cargo miri test --package canaad-core
+
+# Run CI workflow locally via act (requires Docker)
+ci-local:
+    act -j ci

@@ -1,9 +1,6 @@
 {
-  "name": "canaad-wasm",
+  "name": "@gnufoo/canaad",
   "type": "module",
-  "collaborators": [
-    "Ethan Henderson <git@gnu.foo>"
-  ],
   "description": "WASM bindings for AAD canonicalization per RFC 8785",
   "version": "1.0.0",
   "license": "MIT OR Apache-2.0",
@@ -12,20 +9,28 @@
     "url": "https://github.com/gnufood/canaad"
   },
   "files": [
-    "canaad_wasm_bg.wasm",
     "canaad_wasm.js",
-    "canaad_wasm.d.ts"
+    "canaad_wasm.d.ts",
+    "canaad_wasm_bg.wasm",
+    "canaad_wasm_bg.wasm.d.ts"
   ],
-  "main": "canaad_wasm.js",
   "types": "canaad_wasm.d.ts",
-  "sideEffects": [
-    "./snippets/*"
-  ],
+  "sideEffects": false,
   "keywords": [
     "aead",
     "aad",
     "canonicalization",
     "jcs",
     "rfc8785"
-  ]
+  ],
+  "exports": {
+    ".": {
+      "types": "./canaad_wasm.d.ts",
+      "import": "./canaad_wasm.js"
+    }
+  },
+  "homepage": "https://gnu.foo/projects/canaad",
+  "bugs": {
+    "email": "bugs@gnu.foo"
+  }
 }
