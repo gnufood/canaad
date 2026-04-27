@@ -8,6 +8,7 @@ on:
   push:
     tags:
       - 'canaad-core/v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
 
 jobs:
   build-wasm:
@@ -49,6 +50,7 @@ jobs:
 
   upload-r2:
     needs: build-wasm
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -128,6 +130,7 @@ jobs:
 
   release:
     needs: build-wasm
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
