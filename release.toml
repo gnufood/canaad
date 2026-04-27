@@ -3,4 +3,5 @@ push = true
 tag = true
 tag-name = "{{crate_name}}/v{{version}}"
 allow-branch = ["main"]
+consolidate-commits = false
 pre-release-commit-message = "release: {{crate_name}} {{version}}"
