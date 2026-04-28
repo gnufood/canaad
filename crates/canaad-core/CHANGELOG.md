@@ -5,6 +5,13 @@ All notable changes to canaad-core will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-04-28
+
+### Added
+
+- Expanded test coverage: pinned hex and SHA-256 assertions for conformance vectors §14.2–14.5 (corrected values for spec hex typos in §14.4 and §14.5); additional `parse_default` path assertions for `ts: null`, `ts: u64::MAX`, fractional `ts`, extension NUL via JSON escape, duplicate `ts` key, object/array/bool as field values, hyphen/dot/uppercase field name rejection; BOM-free output, full JCS escape set, shared-prefix and non-BMP key ordering. No behaviour changes.
+- `section_10.rs` renamed to `section_14.rs`; spec places known-answer vectors in §14, not §10.
+
 ## [1.0.0] - 2026-04-27
 
 ### Changed

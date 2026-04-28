@@ -149,4 +149,53 @@ mod tests {
         let result = canonicalize_value(&value);
         assert!(matches!(result, Err(AadError::SerializedTooLarge { .. })));
     }
+
+    #[test]
+    fn test_canonicalize_no_bom() {
+        let value = json!({"v": 1, "tenant": "org"});
+        let bytes = canonicalize_value(&value).unwrap();
+        assert!(
+            !bytes.starts_with(&[0xEF, 0xBB, 0xBF]),
+            "canonical output must not begin with a UTF-8 BOM"
+        );
+    }
+
+    #[test]
+    fn test_canonicalize_all_jcs_escapes() {
+        let value = json!({
+            "backslash": "a\\b",
+            "tab":       "a\tb",
+            "cr":        "a\rb",
+            "backspace": "a\u{0008}b",
+            "formfeed":  "a\u{000C}b",
+            "ctrl_01":   "a\u{0001}b",
+            "ctrl_1f":   "a\u{001F}b",
+        });
+        let s = String::from_utf8(canonicalize_value(&value).unwrap()).unwrap();
+        assert!(s.contains(r#""backslash":"a\\b""#), "backslash must be \\\\");
+        assert!(s.contains(r#""tab":"a\tb""#), "tab must be \\t");
+        assert!(s.contains(r#""cr":"a\rb""#), "CR must be \\r");
+        assert!(s.contains(r#""backspace":"a\bb""#), "backspace must be \\b");
+        assert!(s.contains(r#""formfeed":"a\fb""#), "form feed must be \\f");
+        assert!(s.contains(r#""ctrl_01":"a\u0001b""#), "U+0001 must be \\u0001");
+        assert!(s.contains(r#""ctrl_1f":"a\u001fb""#), "U+001F must be \\u001f");
+    }
+
+    #[test]
+    fn test_canonicalize_shared_prefix_keys() {
+        let value = json!({"abcd": 1, "ab": 2, "abc": 3, "a": 4});
+        let s = String::from_utf8(canonicalize_value(&value).unwrap()).unwrap();
+        assert_eq!(s, r#"{"a":4,"ab":2,"abc":3,"abcd":1}"#);
+    }
+
+    #[test]
+    fn test_canonicalize_non_bmp_keys() {
+        let value = json!({"🔐": 1, "a": 2, "z": 3});
+        let bytes = canonicalize_value(&value).unwrap();
+        let s = String::from_utf8(bytes).unwrap();
+        let pos_a = s.find(r#""a":"#).unwrap();
+        let pos_z = s.find(r#""z":"#).unwrap();
+        let pos_em = s.find("🔐").unwrap();
+        assert!(pos_a < pos_z && pos_z < pos_em, "JCS UTF-16 order: a < z < 🔐");
+    }
 }

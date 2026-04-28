@@ -1,6 +1,6 @@
-//! Test vector modules covering spec §10, rejection cases, and boundary inputs.
+//! Test vector modules covering spec §14, rejection cases, and boundary inputs.
 
 mod edge_cases;
 mod negative;
 mod property;
-mod section_10;
+mod section_14;

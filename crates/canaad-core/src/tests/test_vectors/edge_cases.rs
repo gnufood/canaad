@@ -469,6 +469,53 @@ fn test_default_version_string_rejected() {
 }
 
 // =============================================================================
+// Default-profile — ts: null, u64::MAX, and fractional
+// =============================================================================
+
+#[test]
+fn test_default_ts_null() {
+    let input = r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","ts":null}"#;
+    assert!(
+        matches!(parse_default(input), Err(AadError::WrongFieldType { field: "ts", .. })),
+        "null ts must return WrongFieldType"
+    );
+}
+
+#[test]
+fn test_default_ts_u64_max() {
+    let input =
+        r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","ts":18446744073709551615}"#;
+    assert!(
+        matches!(parse_default(input), Err(AadError::IntegerOutOfRange { .. })),
+        "u64::MAX ts must return IntegerOutOfRange"
+    );
+}
+
+#[test]
+fn test_default_ts_fractional() {
+    let input = r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","ts":1.5}"#;
+    assert!(
+        matches!(parse_default(input), Err(AadError::WrongFieldType { field: "ts", .. })),
+        "fractional ts must return WrongFieldType in core parse path"
+    );
+}
+
+// =============================================================================
+// Default-profile — extension string NUL via JSON parse path
+// =============================================================================
+
+#[test]
+fn test_default_extension_string_nul_byte() {
+    // \u0000 is a JSON escape; serde_json decodes it to U+0000 before validation
+    let input =
+        r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_app_tag":"val\u0000ue"}"#;
+    assert!(
+        matches!(parse_default(input), Err(AadError::NulByteInValue { field: "extension" })),
+        "extension string with \\u0000 must return NulByteInValue"
+    );
+}
+
+// =============================================================================
 // Default-profile — missing required fields (parameterized)
 // =============================================================================
 

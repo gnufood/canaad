@@ -1,6 +1,6 @@
 [package]
 name = "canaad-core"
-version = "1.0.0"
+version = "1.0.1"
 description = "Core library for AAD canonicalization per RFC 8785"
 documentation = "https://docs.rs/canaad-core"
 homepage = "https://gnu.foo/projects/canaad"

@@ -288,3 +288,69 @@ fn test_negative_generic_rejects_non_object(#[case] input: &str, #[case] label: 
         "{label} must return InvalidJson; got {result:?}"
     );
 }
+
+// =============================================================================
+// Duplicate `ts` key via raw JSON
+// =============================================================================
+
+#[test]
+fn test_negative_duplicate_ts() {
+    let input = r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","ts":1,"ts":2}"#;
+    assert!(
+        matches!(parse_default(input), Err(AadError::DuplicateKey { ref key }) if key == "ts"),
+        "duplicate ts must return DuplicateKey"
+    );
+}
+
+// =============================================================================
+// Object, array, and boolean as field values
+// =============================================================================
+
+#[rstest]
+#[case(r#"{"v":1,"tenant":["a","b"],"resource":"res","purpose":"test"}"#, "array as tenant")]
+#[case(r#"{"v":1,"tenant":{"sub":"obj"},"resource":"res","purpose":"test"}"#, "object as tenant")]
+#[case(r#"{"v":1,"tenant":true,"resource":"res","purpose":"test"}"#, "bool as tenant")]
+#[case(
+    r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_app_flag":true}"#,
+    "bool as extension"
+)]
+#[case(
+    r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_app_data":[]}"#,
+    "array as extension"
+)]
+fn test_negative_invalid_field_value_type(#[case] input: &str, #[case] _label: &str) {
+    assert!(
+        matches!(parse_default(input), Err(AadError::WrongFieldType { .. })),
+        "{_label} must return WrongFieldType"
+    );
+}
+
+// =============================================================================
+// Invalid key characters: hyphens and dots
+// =============================================================================
+
+#[rstest]
+#[case(
+    r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x-region":"us"}"#,
+    "hyphen in key"
+)]
+#[case(r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x.region":"us"}"#, "dot in key")]
+fn test_negative_invalid_key_characters(#[case] input: &str, #[case] _label: &str) {
+    assert!(
+        matches!(parse_default(input), Err(AadError::InvalidFieldKey { .. })),
+        "{_label} must return InvalidFieldKey"
+    );
+}
+
+// =============================================================================
+// Uppercase X prefix in field name
+// =============================================================================
+
+#[test]
+fn test_negative_uppercase_x_prefix() {
+    let input = r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","X_region":"us"}"#;
+    assert!(
+        matches!(parse_default(input), Err(AadError::InvalidFieldKey { .. })),
+        "X_region must return InvalidFieldKey"
+    );
+}
