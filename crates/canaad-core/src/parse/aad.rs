@@ -24,7 +24,8 @@ pub(crate) struct ParsedAad {
     pub(crate) extensions: Extensions,
 }
 
-/// Applies core rules only: size check, duplicate-key detection, JSON parse, object assert.
+/// Applies core rules only: size check, duplicate-key detection, JSON parse, object assert,
+/// and `[a-z_]` field name syntax.
 ///
 /// Does not enforce any profile-specific fields (version, required keys, extensions).
 /// Use `parse_aad` for the full default-profile validation.
@@ -32,7 +33,8 @@ pub(crate) struct ParsedAad {
 /// # Errors
 ///
 /// Returns an error if the input exceeds `MAX_AAD_SIZE`, contains duplicate keys,
-/// is syntactically invalid JSON, or is not a JSON object.
+/// is syntactically invalid JSON, is not a JSON object, or any key contains characters
+/// outside `[a-z_]`.
 pub(crate) fn parse_object(json: &str) -> Result<serde_json::Value, AadError> {
     if json.len() > MAX_AAD_SIZE {
         return Err(AadError::SerializedTooLarge {
@@ -44,6 +46,10 @@ pub(crate) fn parse_object(json: &str) -> Result<serde_json::Value, AadError> {
     let value = parse_json_with_duplicate_check(json)?;
     if !value.is_object() {
         return Err(AadError::InvalidJson { message: "input must be a JSON object".to_string() });
+    }
+
+    for key in value.as_object().expect("checked above").keys() {
+        FieldKey::new(key.as_str())?;
     }
 
     Ok(value)
@@ -85,7 +91,7 @@ fn extract_version(obj: &Map<String, Value>) -> Result<SafeInt, AadError> {
             if n != CURRENT_VERSION {
                 return Err(AadError::UnsupportedVersion { version: n });
             }
-            SafeInt::new(n)
+            SafeInt::new_for_field(n, "v")
         }
     }
 }
@@ -95,17 +101,8 @@ fn validate_field_names(obj: &Map<String, Value>) -> Result<(), AadError> {
         if RESERVED_KEYS.contains(&key.as_str()) {
             continue;
         }
-        // Inline char-check so invalid-char keys (e.g. "FOO") return InvalidFieldKey
-        // rather than UnknownField — preserving error semantics while avoiding a
-        // FieldKey allocation for the UnknownField path.
-        for ch in key.chars() {
-            if !matches!(ch, 'a'..='z' | '_') {
-                return Err(AadError::InvalidFieldKey {
-                    key: key.clone(),
-                    reason: format!("contains invalid character '{ch}', only [a-z_] allowed"),
-                });
-            }
-        }
+        // [a-z_] already enforced by `parse_object`; only unknown-field and
+        // `x_<app>_<field>` extension-pattern checks remain
         if !key.starts_with("x_") {
             return Err(AadError::UnknownField { field: key.clone(), version: CURRENT_VERSION });
         }
@@ -128,7 +125,7 @@ fn extract_optional_timestamp(obj: &Map<String, Value>) -> Result<Option<SafeInt
     match obj.get("ts") {
         None => Ok(None),
         Some(v) => match v.as_u64() {
-            Some(n) => Ok(Some(SafeInt::new(n)?)),
+            Some(n) => Ok(Some(SafeInt::new_for_field(n, "ts")?)),
             None => v.as_i64().map_or_else(
                 || {
                     Err(AadError::WrongFieldType {
@@ -137,7 +134,7 @@ fn extract_optional_timestamp(obj: &Map<String, Value>) -> Result<Option<SafeInt
                         actual: JsonType::from(v),
                     })
                 },
-                |i| Err(AadError::NegativeInteger { value: i }),
+                |i| Err(AadError::NegativeInteger { field: "ts".to_string(), value: i }),
             ),
         },
     }
@@ -149,14 +146,14 @@ fn extract_extensions(obj: &Map<String, Value>) -> Result<Extensions, AadError> 
         if key.starts_with("x_") {
             // validate_field_names already verified key format
             let field_key = FieldKey::new(key.as_str())?;
-            let ext_value = parse_extension_value(value)?;
+            let ext_value = parse_extension_value(value, key.as_str())?;
             extensions.insert(field_key, ext_value);
         }
     }
     Ok(extensions)
 }
 
-fn parse_extension_value(value: &Value) -> Result<ExtensionValue, AadError> {
+fn parse_extension_value(value: &Value, field: &str) -> Result<ExtensionValue, AadError> {
     match value {
         Value::String(s) => ExtensionValue::string(s),
         Value::Number(n) => n.as_u64().map_or_else(
@@ -167,10 +164,10 @@ fn parse_extension_value(value: &Value) -> Result<ExtensionValue, AadError> {
                         expected: "string or integer",
                         actual: JsonType::Number,
                     }),
-                    |i| Err(AadError::NegativeInteger { value: i }),
+                    |i| Err(AadError::NegativeInteger { field: field.to_string(), value: i }),
                 )
             },
-            ExtensionValue::integer,
+            |v| ExtensionValue::integer_for_field(v, field),
         ),
         _ => Err(AadError::WrongFieldType {
             field: "extension",

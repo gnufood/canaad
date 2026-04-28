@@ -35,7 +35,12 @@ impl ExtensionValue {
     ///
     /// Returns `IntegerOutOfRange` if `value` exceeds 2^53-1.
     pub fn integer(value: u64) -> Result<Self, AadError> {
-        Ok(Self::Integer(SafeInt::new(value)?))
+        Ok(Self::Integer(SafeInt::new_for_field(value, "extension")?))
+    }
+
+    // `integer()` variant that names the specific field on `IntegerOutOfRange`
+    pub(crate) fn integer_for_field(value: u64, field: &str) -> Result<Self, AadError> {
+        Ok(Self::Integer(SafeInt::new_for_field(value, field)?))
     }
 }
 
@@ -93,7 +98,10 @@ impl<'de> Deserialize<'de> for ExtensionValue {
                 E: Error,
             {
                 if v < 0 {
-                    return Err(Error::custom(AadError::NegativeInteger { value: v }));
+                    return Err(Error::custom(AadError::NegativeInteger {
+                        field: "extension".to_string(),
+                        value: v,
+                    }));
                 }
                 ExtensionValue::integer(v.unsigned_abs()).map_err(Error::custom)
             }

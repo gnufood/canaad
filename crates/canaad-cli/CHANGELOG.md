@@ -5,6 +5,12 @@ All notable changes to canaad-cli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-04-28
+
+### Changed
+
+- Updated to `canaad-core` 2.0.0. Error messages for integer range and negative integer errors now include the field name (e.g. `field 'ts' negative integer not allowed: -1`). CLI subcommand names and flags unchanged.
+
 ## [1.0.0] - 2026-04-27
 
 ### Changed

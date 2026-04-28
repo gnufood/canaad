@@ -5,6 +5,18 @@ All notable changes to canaad-core will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-04-28
+
+### Changed
+
+- **Breaking:** `AadError::IntegerOutOfRange` gains a `field: String` member identifying which field triggered the error (`"v"`, `"ts"`, or the extension key name). Match arms destructuring this variant must be updated.
+- **Breaking:** `AadError::NegativeInteger` gains a `field: String` member. Same requirement.
+- **Breaking:** `canonicalize_object` and `validate_object` now enforce `[a-z_]` on all keys, returning `InvalidFieldKey` for names containing uppercase letters, hyphens, dots, or digits. Previously these functions accepted any key name.
+
+### Added
+
+- Error messages for `IntegerOutOfRange` and `NegativeInteger` now include the field name, making diagnostics self-describing without inspecting the error struct.
+
 ## [1.0.1] - 2026-04-28
 
 ### Added

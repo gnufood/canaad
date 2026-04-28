@@ -126,6 +126,35 @@ fn test_generic_exceeds_max_aad_size() {
 }
 
 // =============================================================================
+// Generic layer — [a-z_] field name enforcement
+// =============================================================================
+
+#[rstest]
+#[case(r#"{"App":"value"}"#, "App — uppercase letter")]
+#[case(r#"{"app-region":"value"}"#, "app-region — hyphen")]
+#[case(r#"{"x1_app":"value"}"#, "x1_app — digit")]
+#[case(r#"{"CamelCase":"value"}"#, "CamelCase — mixed case")]
+#[case(r#"{"foo.bar":"value"}"#, "foo.bar — dot")]
+#[case(r#"{"UPPER":"value"}"#, "UPPER — all caps")]
+fn test_generic_rejects_invalid_field_key(#[case] input: &str, #[case] label: &str) {
+    let result = canonicalize_object(input);
+    assert!(
+        matches!(result, Err(AadError::InvalidFieldKey { .. })),
+        "{label}: generic layer must return InvalidFieldKey; got {result:?}"
+    );
+}
+
+#[rstest]
+#[case(r#"{"abc":"value"}"#, "all lowercase")]
+#[case(r#"{"a_b":"value"}"#, "with underscore")]
+#[case(r#"{"_internal":"value"}"#, "leading underscore")]
+#[case(r#"{"x_app_field":"value"}"#, "extension-style key")]
+fn test_generic_accepts_valid_field_key(#[case] input: &str, #[case] label: &str) {
+    let result = canonicalize_object(input);
+    assert!(result.is_ok(), "{label}: generic layer must accept valid [a-z_] key; got {result:?}");
+}
+
+// =============================================================================
 // Generic-layer — non-object JSON types must be rejected (parameterized)
 // =============================================================================
 
@@ -513,6 +542,75 @@ fn test_default_extension_string_nul_byte() {
         matches!(parse_default(input), Err(AadError::NulByteInValue { field: "extension" })),
         "extension string with \\u0000 must return NulByteInValue"
     );
+}
+
+// =============================================================================
+// IntegerOutOfRange carries the field name
+// =============================================================================
+
+#[test]
+fn test_integer_out_of_range_carries_ts_field() {
+    let above = MAX_SAFE_INTEGER + 1;
+    let input =
+        format!(r#"{{"v":1,"tenant":"org","resource":"res","purpose":"test","ts":{above}}}"#);
+    match parse_default(&input) {
+        Err(AadError::IntegerOutOfRange { ref field, .. }) => {
+            assert_eq!(
+                field, "ts",
+                "IntegerOutOfRange for ts must carry field=\"ts\", got: {field:?}"
+            );
+        }
+        other => panic!("expected IntegerOutOfRange, got: {other:?}"),
+    }
+}
+
+#[test]
+fn test_integer_out_of_range_carries_extension_field() {
+    let above = MAX_SAFE_INTEGER + 1;
+    let input = format!(
+        r#"{{"v":1,"tenant":"org","resource":"res","purpose":"test","x_app_foo":{above}}}"#
+    );
+    match parse_default(&input) {
+        Err(AadError::IntegerOutOfRange { ref field, .. }) => {
+            assert_eq!(
+                field, "x_app_foo",
+                "IntegerOutOfRange for extension must carry the key name, got: {field:?}"
+            );
+        }
+        other => panic!("expected IntegerOutOfRange, got: {other:?}"),
+    }
+}
+
+// =============================================================================
+// NegativeInteger carries the field name
+// =============================================================================
+
+#[test]
+fn test_negative_integer_carries_ts_field() {
+    let input = r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","ts":-1}"#;
+    match parse_default(input) {
+        Err(AadError::NegativeInteger { ref field, .. }) => {
+            assert_eq!(
+                field, "ts",
+                "NegativeInteger for ts must carry field=\"ts\", got: {field:?}"
+            );
+        }
+        other => panic!("expected NegativeInteger, got: {other:?}"),
+    }
+}
+
+#[test]
+fn test_negative_integer_carries_extension_field() {
+    let input = r#"{"v":1,"tenant":"org","resource":"res","purpose":"test","x_app_foo":-5}"#;
+    match parse_default(input) {
+        Err(AadError::NegativeInteger { ref field, .. }) => {
+            assert_eq!(
+                field, "x_app_foo",
+                "NegativeInteger for extension must carry the key name, got: {field:?}"
+            );
+        }
+        other => panic!("expected NegativeInteger, got: {other:?}"),
+    }
 }
 
 // =============================================================================

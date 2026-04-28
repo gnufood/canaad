@@ -7,8 +7,10 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum AadError {
     /// Integer value exceeds the safe range (0 to 2^53-1).
-    #[error("integer out of range: {value} exceeds maximum safe value {max}")]
+    #[error("field '{field}' integer out of range: {value} exceeds maximum safe value {max}")]
     IntegerOutOfRange {
+        /// The field whose value was out of range
+        field: String,
         /// The value that was out of range
         value: u64,
         /// The maximum allowed value (2^53-1)
@@ -16,8 +18,10 @@ pub enum AadError {
     },
 
     /// Negative integer encountered where unsigned was expected.
-    #[error("negative integer not allowed: {value}")]
+    #[error("field '{field}' negative integer not allowed: {value}")]
     NegativeInteger {
+        /// The field that received the negative value
+        field: String,
         /// The negative value encountered
         value: i64,
     },

@@ -48,7 +48,7 @@ impl AadContext {
         purpose: impl Into<String>,
     ) -> Result<Self, AadError> {
         Ok(Self {
-            version: SafeInt::new(CURRENT_VERSION)?,
+            version: SafeInt::new_for_field(CURRENT_VERSION, "v")?,
             tenant: Tenant::new(tenant)?,
             resource: Resource::new(resource)?,
             purpose: Purpose::new(purpose)?,
@@ -69,7 +69,7 @@ impl AadContext {
     ///
     /// Returns `IntegerOutOfRange` if `ts` exceeds 2^53-1.
     pub fn with_timestamp(mut self, ts: u64) -> Result<Self, AadError> {
-        self.timestamp = Some(SafeInt::new(ts)?);
+        self.timestamp = Some(SafeInt::new_for_field(ts, "ts")?);
         Ok(self)
     }
 

@@ -19,11 +19,25 @@ impl SafeInt {
     /// # Errors
     ///
     /// Returns `IntegerOutOfRange` if `value` exceeds `MAX_SAFE_INTEGER`.
-    pub const fn new(value: u64) -> Result<Self, AadError> {
+    pub fn new_for_field(value: u64, field: impl Into<String>) -> Result<Self, AadError> {
         if value > MAX_SAFE_INTEGER {
-            return Err(AadError::IntegerOutOfRange { value, max: MAX_SAFE_INTEGER });
+            return Err(AadError::IntegerOutOfRange {
+                field: field.into(),
+                value,
+                max: MAX_SAFE_INTEGER,
+            });
         }
         Ok(Self(value))
+    }
+
+    /// Validates `value` against the 2^53-1 bound. Errors carry `field: "unknown"` —
+    /// prefer `new_for_field` when the caller knows the field name.
+    ///
+    /// # Errors
+    ///
+    /// Returns `IntegerOutOfRange` if `value` exceeds `MAX_SAFE_INTEGER`.
+    pub fn new(value: u64) -> Result<Self, AadError> {
+        Self::new_for_field(value, "unknown")
     }
 
     /// Returns the validated integer. Guaranteed in `[0, MAX_SAFE_INTEGER]` (2^53-1).
@@ -47,7 +61,7 @@ impl TryFrom<i64> for SafeInt {
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
         if value < 0 {
-            return Err(AadError::NegativeInteger { value });
+            return Err(AadError::NegativeInteger { field: "unknown".to_string(), value });
         }
         Self::new(value.unsigned_abs())
     }
